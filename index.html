@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#00F5C4">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Cada segundo sin fumar cuenta.">
+<meta property="og:title" content="LibreHoy">
+<meta property="og:description" content="Cada segundo sin fumar cuenta.">
+<meta property="og:type" content="website">
+<title>LibreHoy</title>
+<link rel="manifest" id="manifest-link">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #0A0E1A;
+  --bg-secondary: #0F1625;
+  --bg-card: rgba(255,255,255,0.04);
+  --border-card: rgba(0,245,196,0.12);
+  --accent-cyan: #00F5C4;
+  --accent-amber: #FFB347;
+  --accent-cyan-dim: rgba(0,245,196,0.15);
+  --accent-cyan-glow: rgba(0,245,196,0.2);
+  --text-primary: #E8F0FE;
+  --text-secondary: rgba(232,240,254,0.55);
+  --text-muted: rgba(232,240,254,0.3);
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --nav-height: 68px;
+  --radius-card: 16px;
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-primary: #F0F4F8;
+    --bg-secondary: #E2E8F0;
+    --bg-card: rgba(0,0,0,0.04);
+    --border-card: rgba(0,180,140,0.2);
+    --accent-cyan: #008F74;
+    --accent-amber: #E0872A;
+    --accent-cyan-dim: rgba(0,143,116,0.1);
+    --accent-cyan-glow: rgba(0,143,116,0.15);
+    --text-primary: #0A0E1A;
+    --text-secondary: rgba(10,14,26,0.6);
+    --text-muted: rgba(10,14,26,0.35);
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── SPLASH ── */
+#splash {
+  position: fixed; inset: 0; z-index: 999;
+  background: var(--bg-primary);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 20px;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+#splash.hidden { opacity: 0; visibility: hidden; }
+
+.splash-logo {
+  animation: splashPulse 2s ease-in-out infinite;
+}
+@keyframes splashPulse {
+  0%, 100% { filter: drop-shadow(0 0 12px var(--accent-cyan-glow)); }
+  50% { filter: drop-shadow(0 0 28px var(--accent-cyan)); }
+}
+.splash-title {
+  font-family: var(--font-display);
+  font-size: 2rem; font-weight: 700;
+  color: var(--accent-cyan);
+  letter-spacing: -0.5px;
+  animation: fadeInUp 0.8s ease 0.3s both;
+}
+.splash-sub {
+  font-size: 0.85rem; color: var(--text-secondary);
+  animation: fadeInUp 0.8s ease 0.5s both;
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── APP SHELL ── */
+#app {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+}
+#app.visible { opacity: 1; visibility: visible; }
+
+/* ── VIEWS ── */
+.view {
+  display: none; flex: 1; overflow-y: auto;
+  padding-bottom: calc(var(--nav-height) + 12px);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.view::-webkit-scrollbar { display: none; }
+.view.active { display: block; }
+
+/* ── NAVBAR ── */
+#navbar {
+  height: var(--nav-height);
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-card);
+  display: flex; align-items: center;
+  flex-shrink: 0;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.nav-btn {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 4px; padding: 8px 0;
+  background: none; border: none;
+  color: var(--text-muted); cursor: pointer;
+  transition: var(--transition-smooth);
+  min-height: 48px;
+}
+.nav-btn.active { color: var(--accent-cyan); }
+.nav-btn svg { width: 22px; height: 22px; }
+.nav-label { font-size: 0.65rem; font-family: var(--font-body); font-weight: 500; }
+
+/* ── SETUP VIEW ── */
+#view-setup {
+  padding: 0;
+  overflow-y: auto;
+  background: var(--bg-primary);
+}
+.setup-scroll { padding: 24px 20px 40px; }
+
+.onboarding-screen {
+  min-height: 100svh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 40px 28px;
+  text-align: center;
+}
+.onboarding-screen.hidden { display: none; }
+
+.onboarding-icon { margin-bottom: 28px; }
+.onboarding-title {
+  font-family: var(--font-display);
+  font-size: 1.75rem; font-weight: 700;
+  line-height: 1.2; color: var(--text-primary);
+  margin-bottom: 16px;
+}
+.onboarding-title span { color: var(--accent-cyan); }
+.onboarding-desc {
+  font-size: 0.95rem; color: var(--text-secondary);
+  line-height: 1.65; margin-bottom: 40px;
+}
+
+.btn-primary {
+  width: 100%; padding: 16px 24px;
+  background: var(--accent-cyan);
+  color: #0A0E1A; border: none; border-radius: 12px;
+  font-family: var(--font-display); font-size: 1rem; font-weight: 600;
+  cursor: pointer; transition: var(--transition-smooth);
+  position: relative; overflow: hidden;
+}
+.btn-primary:active { transform: scale(0.97); }
+.btn-primary::after {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(255,255,255,0.15);
+  opacity: 0; transition: opacity 0.2s;
+}
+.btn-primary:active::after { opacity: 1; }
+
+.btn-secondary {
+  width: 100%; padding: 14px 24px;
+  background: transparent;
+  color: var(--text-secondary); border: 1px solid var(--border-card);
+  border-radius: 12px; font-family: var(--font-body);
+  font-size: 0.95rem; cursor: pointer;
+  transition: var(--transition-smooth);
+}
+.btn-secondary:active { background: var(--bg-card); }
+
+.setup-form { padding: 28px 20px 48px; }
+.form-title {
+  font-family: var(--font-display); font-size: 1.4rem;
+  font-weight: 700; margin-bottom: 8px;
+}
+.form-sub { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 32px; }
+
+.form-group { margin-bottom: 20px; }
+.form-label {
+  display: block; font-size: 0.8rem; font-weight: 500;
+  color: var(--text-secondary); margin-bottom: 8px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.form-input {
+  width: 100%; padding: 14px 16px;
+  background: var(--bg-card); border: 1px solid var(--border-card);
+  border-radius: 10px; color: var(--text-primary);
+  font-family: var(--font-body); font-size: 1rem;
+  transition: border-color 0.2s;
+  -webkit-appearance: none; appearance: none;
+}
+.form-input:focus {
+  outline: none; border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 3px var(--accent-cyan-dim);
+}
+.form-input::placeholder { color: var(--text-muted); }
+.form-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; }
+.form-error {
+  font-size: 0.75rem; color: var(--accent-amber);
+  margin-top: 6px; display: none;
+}
+.form-error.visible { display: block; }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* ── DASHBOARD VIEW ── */
+.dashboard-header {
+  padding: 20px 20px 0;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.app-name {
+  font-family: var(--font-display); font-size: 1.1rem;
+  font-weight: 700; color: var(--accent-cyan);
+}
+.header-badge {
+  font-size: 0.7rem; font-weight: 500;
+  background: var(--accent-cyan-dim);
+  color: var(--accent-cyan); padding: 4px 10px;
+  border-radius: 20px; border: 1px solid var(--border-card);
+}
+
+/* ── FUTURE DATE BANNER ── */
+#future-banner {
+  margin: 16px 20px 0;
+  padding: 16px; background: rgba(255,179,71,0.08);
+  border: 1px solid rgba(255,179,71,0.25); border-radius: 12px;
+  display: none; text-align: center;
+}
+#future-banner.visible { display: block; }
+.future-title {
+  font-family: var(--font-display); font-size: 1rem;
+  font-weight: 600; color: var(--accent-amber); margin-bottom: 6px;
+}
+.future-desc { font-size: 0.85rem; color: var(--text-secondary); }
+
+/* ── COUNTER BLOCK ── */
+.counter-wrapper {
+  margin: 20px 20px 0;
+  padding: 28px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-card);
+  filter: drop-shadow(0 4px 20px var(--accent-cyan-glow));
+  text-align: center;
+}
+.counter-label {
+  font-size: 0.72rem; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-muted); margin-bottom: 20px;
+}
+.counter-grid {
+  display: flex; gap: 8px; justify-content: center;
+}
+.counter-unit {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; gap: 6px;
+}
+.counter-number {
+  font-family: var(--font-display); font-size: clamp(2rem, 8vw, 3rem);
+  font-weight: 700; color: var(--accent-cyan);
+  line-height: 1; min-width: 60px;
+  transition: transform 0.15s ease;
+}
+.counter-number.flip {
+  animation: digitFlip 0.2s ease;
+}
+@keyframes digitFlip {
+  0% { transform: translateY(0); opacity: 1; }
+  50% { transform: translateY(-6px); opacity: 0.4; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.counter-unit-label {
+  font-size: 0.62rem; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.counter-sep {
+  font-family: var(--font-display); font-size: 2.2rem;
+  color: var(--border-card); align-self: flex-start; padding-top: 4px;
+}
+
+/* ── METRICS GRID ── */
+.metrics-grid {
+  margin: 16px 20px 0;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.metric-card {
+  padding: 18px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-card);
+  display: flex; flex-direction: column; gap: 8px;
+  transition: var(--transition-smooth);
+}
+.metric-card:active { transform: scale(0.97); }
+.metric-icon {
+  width: 32px; height: 32px;
+  background: var(--accent-cyan-dim);
+  border-radius: 8px; display: flex;
+  align-items: center; justify-content: center;
+}
+.metric-icon svg { width: 16px; height: 16px; color: var(--accent-cyan); }
+.metric-value {
+  font-family: var(--font-display); font-size: 1.4rem;
+  font-weight: 700; color: var(--text-primary); line-height: 1.1;
+}
+.metric-name { font-size: 0.72rem; color: var(--text-muted); }
+
+/* ── HEALTH BAR ── */
+.health-card {
+  margin: 16px 20px 0;
+  padding: 18px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-card);
+}
+.health-header {
+  display: flex; align-items: center;
+  justify-content: space-between; margin-bottom: 12px;
+}
+.health-title {
+  font-size: 0.72rem; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.health-pct {
+  font-family: var(--font-display); font-size: 0.9rem;
+  font-weight: 600; color: var(--accent-cyan);
+}
+.health-bar-track {
+  height: 8px; background: rgba(255,255,255,0.06);
+  border-radius: 4px; overflow: hidden;
+}
+.health-bar-fill {
+  height: 100%; border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent-cyan), #00C896);
+  transition: width 1s ease;
+  box-shadow: 0 0 8px var(--accent-cyan-glow);
+}
+.health-desc { font-size: 0.78rem; color: var(--text-secondary); margin-top: 8px; }
+
+/* ── RECAI BUTTON ── */
+#btn-recai {
+  position: fixed; bottom: calc(var(--nav-height) + 16px + var(--safe-bottom));
+  right: 16px; z-index: 50;
+  background: rgba(255,179,71,0.08);
+  border: 1px solid rgba(255,179,71,0.25);
+  border-radius: 10px; padding: 8px 14px;
+  display: flex; align-items: center; gap: 6px;
+  cursor: pointer; transition: var(--transition-smooth);
+  color: var(--accent-amber);
+}
+#btn-recai:active { transform: scale(0.95); }
+#btn-recai svg { width: 14px; height: 14px; }
+#btn-recai span { font-size: 0.72rem; font-weight: 500; }
+.btn-recai-shake { animation: shake 0.4s ease; }
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+/* ── ACHIEVEMENTS VIEW ── */
+.view-header {
+  padding: 24px 20px 16px;
+  font-family: var(--font-display); font-size: 1.3rem; font-weight: 700;
+}
+.view-sub {
+  font-size: 0.82rem; color: var(--text-secondary);
+  padding: 0 20px 20px; line-height: 1.5;
+}
+.achievements-grid {
+  padding: 0 20px; display: grid;
+  grid-template-columns: 1fr 1fr; gap: 12px;
+}
+.achievement-card {
+  padding: 20px 16px; background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-card);
+  text-align: center; transition: var(--transition-smooth);
+  position: relative; overflow: hidden;
+}
+.achievement-card.locked { opacity: 0.4; filter: grayscale(80%); }
+.achievement-card.unlocked {
+  border-color: var(--accent-cyan);
+  filter: drop-shadow(0 2px 12px var(--accent-cyan-glow));
+}
+.achievement-card.just-unlocked {
+  animation: achieveGlow 1s ease;
+}
+@keyframes achieveGlow {
+  0% { transform: scale(0.95); }
+  40% { transform: scale(1.04); box-shadow: 0 0 30px var(--accent-cyan); }
+  100% { transform: scale(1); }
+}
+.achievement-emoji {
+  font-size: 2.2rem; margin-bottom: 10px; display: block;
+}
+.achievement-title {
+  font-family: var(--font-display); font-size: 0.85rem;
+  font-weight: 600; color: var(--text-primary); margin-bottom: 4px;
+}
+.achievement-desc { font-size: 0.7rem; color: var(--text-muted); }
+.achievement-unlocked-badge {
+  position: absolute; top: 8px; right: 8px;
+  width: 18px; height: 18px;
+  background: var(--accent-cyan);
+  border-radius: 50%; display: none;
+  align-items: center; justify-content: center;
+}
+.achievement-card.unlocked .achievement-unlocked-badge { display: flex; }
+.achievement-unlocked-badge svg { width: 10px; height: 10px; color: #0A0E1A; }
+
+/* ── COMMUNITY VIEW ── */
+.community-header {
+  padding: 24px 20px 0;
+}
+.community-title {
+  font-family: var(--font-display); font-size: 1.3rem; font-weight: 700;
+  margin-bottom: 6px;
+}
+.community-sub { font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 20px; }
+
+.featured-message {
+  margin: 0 20px 20px;
+  padding: 24px 20px;
+  background: var(--accent-cyan-dim);
+  border: 1px solid rgba(0,245,196,0.2);
+  border-radius: var(--radius-card);
+  text-align: center; min-height: 160px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 16px;
+  transition: opacity 0.5s ease;
+}
+.featured-message.fading { opacity: 0; }
+.feat-avatar {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--accent-cyan); color: #0A0E1A;
+  font-family: var(--font-display); font-size: 1.2rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.feat-msg {
+  font-size: 0.95rem; color: var(--text-primary);
+  line-height: 1.6; font-style: italic;
+}
+.feat-author { font-size: 0.75rem; color: var(--text-muted); }
+
+.community-list { padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
+.community-item {
+  padding: 16px; background: var(--bg-card);
+  border: 1px solid var(--border-card); border-radius: var(--radius-card);
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.c-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  font-family: var(--font-display); font-size: 0.9rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; color: #0A0E1A;
+}
+.c-body { flex: 1; min-width: 0; }
+.c-text { font-size: 0.85rem; color: var(--text-primary); line-height: 1.5; margin-bottom: 6px; }
+.c-meta { font-size: 0.7rem; color: var(--text-muted); }
+
+/* ── MODAL ── */
+#modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
+  display: flex; align-items: flex-end;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+#modal-overlay.visible { opacity: 1; visibility: visible; }
+.modal-sheet {
+  width: 100%; background: var(--bg-secondary);
+  border-radius: 20px 20px 0 0;
+  padding: 12px 20px 40px;
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+#modal-overlay.visible .modal-sheet { transform: translateY(0); }
+.modal-handle {
+  width: 36px; height: 4px; background: var(--text-muted);
+  border-radius: 2px; margin: 0 auto 24px;
+}
+.modal-icon { text-align: center; margin-bottom: 16px; }
+.modal-title {
+  font-family: var(--font-display); font-size: 1.2rem;
+  font-weight: 700; text-align: center; margin-bottom: 10px;
+}
+.modal-desc {
+  font-size: 0.9rem; color: var(--text-secondary);
+  text-align: center; line-height: 1.6; margin-bottom: 28px;
+}
+.modal-actions { display: flex; flex-direction: column; gap: 12px; }
+.btn-danger {
+  width: 100%; padding: 16px;
+  background: rgba(255,179,71,0.15); color: var(--accent-amber);
+  border: 1px solid rgba(255,179,71,0.3); border-radius: 12px;
+  font-family: var(--font-display); font-size: 1rem; font-weight: 600;
+  cursor: pointer; transition: var(--transition-smooth);
+}
+.btn-danger:active { background: rgba(255,179,71,0.25); }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; top: calc(var(--safe-top) + 16px); left: 16px; right: 16px;
+  z-index: 300; background: var(--accent-cyan);
+  color: #0A0E1A; border-radius: 12px; padding: 14px 18px;
+  font-family: var(--font-display); font-size: 0.9rem; font-weight: 600;
+  display: flex; align-items: center; gap: 10px;
+  transform: translateY(-100%); opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.4s ease;
+  pointer-events: none;
+}
+#toast.visible { transform: translateY(0); opacity: 1; }
+#toast svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+/* ── TOOLTIP ── */
+[data-tooltip] { position: relative; }
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute; bottom: calc(100% + 6px); left: 50%;
+  transform: translateX(-50%); white-space: nowrap;
+  background: #1A2035; color: var(--text-primary);
+  font-size: 0.7rem; padding: 6px 10px; border-radius: 6px;
+  border: 1px solid var(--border-card);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s; z-index: 10;
+}
+[data-tooltip]:hover::after,
+[data-tooltip]:focus::after { opacity: 1; }
+
+/* ── EDIT CONFIG LINK ── */
+.edit-config-link {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; margin: 16px 20px 0; padding: 12px;
+  background: none; border: 1px dashed var(--border-card);
+  border-radius: 10px; color: var(--text-muted);
+  font-size: 0.78rem; cursor: pointer;
+  transition: var(--transition-smooth);
+}
+.edit-config-link:active { color: var(--accent-cyan); border-color: var(--accent-cyan); }
+.edit-config-link svg { width: 14px; height: 14px; }
+
+/* ── YEAR FORMAT ── */
+.big-year {
+  font-family: var(--font-display); font-size: 1.1rem;
+  font-weight: 700; color: var(--accent-cyan);
+  text-align: center; padding: 4px 0 8px;
+}
+
+/* ── SCROLLABLE PADDING ── */
+.scroll-pad { height: 24px; }
+
+/* ── RESPONSIVE ADJUSTMENTS ── */
+@media (max-width: 360px) {
+  .counter-number { font-size: 1.7rem; }
+  .counter-sep { font-size: 1.7rem; }
+  .metrics-grid { grid-template-columns: 1fr; }
+  .achievements-grid { grid-template-columns: 1fr; }
+}
+
+/* ── PROGRESS DOTS ── */
+.progress-dots {
+  display: flex; gap: 8px; justify-content: center; margin-top: 20px;
+}
+.dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--text-muted); transition: var(--transition-smooth);
+}
+.dot.active { background: var(--accent-cyan); width: 18px; border-radius: 3px; }
+
+/* ── SETTINGS ICON IN DASHBOARD ── */
+.settings-link {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-muted); padding: 6px;
+  border-radius: 8px; transition: var(--transition-smooth);
+  display: flex; align-items: center;
+}
+.settings-link:active { color: var(--accent-cyan); background: var(--accent-cyan-dim); }
+.settings-link svg { width: 20px; height: 20px; }
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.6) sepia(1) hue-rotate(130deg) saturate(3);
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<!-- ── SPLASH ── -->
+<div id="splash">
+  <div class="splash-logo">
+    <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="36" cy="36" r="34" stroke="#00F5C4" stroke-width="1.5" opacity="0.3"/>
+      <circle cx="36" cy="36" r="26" stroke="#00F5C4" stroke-width="1" opacity="0.5"/>
+      <path d="M36 16 C36 16 48 24 48 36 C48 48 36 56 36 56 C36 56 24 48 24 36 C24 24 36 16 36 16Z" fill="#00F5C4" opacity="0.15"/>
+      <path d="M36 22 L36 50 M26 30 Q36 22 46 30 M26 42 Q36 50 46 42" stroke="#00F5C4" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="36" cy="36" r="5" fill="#00F5C4"/>
+      <circle cx="36" cy="36" r="2.5" fill="#0A0E1A"/>
+    </svg>
+  </div>
+  <div class="splash-title">LibreHoy</div>
+  <div class="splash-sub">Cada segundo sin fumar cuenta</div>
+</div>
+
+<!-- ── APP SHELL ── -->
+<div id="app">
+
+  <!-- ===== VIEW: SETUP ===== -->
+  <div id="view-setup" class="view active">
+
+    <!-- Onboarding Step 1 -->
+    <div id="onboarding-1" class="onboarding-screen">
+      <div class="onboarding-icon">
+        <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+          <circle cx="40" cy="40" r="38" fill="rgba(0,245,196,0.08)" stroke="rgba(0,245,196,0.2)" stroke-width="1"/>
+          <path d="M26 44 C26 44 28 36 40 36 C52 36 54 44 54 44" stroke="#00F5C4" stroke-width="2" stroke-linecap="round" fill="none"/>
+          <circle cx="40" cy="28" r="8" fill="rgba(0,245,196,0.15)" stroke="#00F5C4" stroke-width="1.5"/>
+          <path d="M37 28 L39 30 L43 26" stroke="#00F5C4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M20 54 Q40 62 60 54" stroke="#00F5C4" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.4"/>
+        </svg>
+      </div>
+      <h1 class="onboarding-title">Tu decisión<br><span>más valiente</span></h1>
+      <p class="onboarding-desc">LibreHoy te acompaña en cada segundo del camino. Visualiza tu progreso, celebra tus logros y mantén la motivación cuando más la necesitas.</p>
+      <div class="progress-dots"><div class="dot active"></div><div class="dot"></div></div>
+      <div style="height:32px"></div>
+      <button class="btn-primary" id="btn-ob1-next">Comenzar →</button>
+    </div>
+
+    <!-- Onboarding Step 2 -->
+    <div id="onboarding-2" class="onboarding-screen hidden">
+      <div class="onboarding-icon">
+        <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+          <circle cx="40" cy="40" r="38" fill="rgba(0,245,196,0.08)" stroke="rgba(0,245,196,0.2)" stroke-width="1"/>
+          <rect x="22" y="28" width="36" height="28" rx="4" fill="rgba(0,245,196,0.08)" stroke="#00F5C4" stroke-width="1.5"/>
+          <path d="M22 36 L58 36" stroke="#00F5C4" stroke-width="1" opacity="0.4"/>
+          <circle cx="31" cy="24" r="2.5" fill="#00F5C4"/>
+          <circle cx="49" cy="24" r="2.5" fill="#00F5C4"/>
+          <rect x="29" y="42" width="6" height="6" rx="1.5" fill="#00F5C4" opacity="0.6"/>
+          <rect x="37" y="42" width="6" height="6" rx="1.5" fill="#00F5C4"/>
+          <rect x="45" y="42" width="6" height="6" rx="1.5" fill="#00F5C4" opacity="0.4"/>
+        </svg>
+      </div>
+      <h1 class="onboarding-title">¿Cuándo<br><span>fue el momento</span>?</h1>
+      <p class="onboarding-desc">Registra el instante exacto en que tomaste la decisión. A partir de ahí, cada segundo cuenta como una victoria.</p>
+      <div class="progress-dots"><div class="dot"></div><div class="dot active"></div></div>
+      <div style="height:32px"></div>
+      <button class="btn-primary" id="btn-ob2-next">Configurar ahora →</button>
+      <div style="height:12px"></div>
+      <button class="btn-secondary" id="btn-ob2-back">← Atrás</button>
+    </div>
+
+    <!-- Config Form -->
+    <div id="config-form" class="setup-form hidden">
+      <h2 class="form-title">Tu perfil de libertad</h2>
+      <p class="form-sub">Estos datos calculan tus métricas en tiempo real.</p>
+
+      <div class="form-group">
+        <label class="form-label" for="input-quit-date">Dejé de fumar el</label>
+        <input class="form-input" type="datetime-local" id="input-quit-date">
+        <div class="form-error" id="err-quit-date">Por favor ingresa una fecha válida.</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="input-daily-cigs">Cigarrillos/día</label>
+          <input class="form-input" type="number" id="input-daily-cigs" min="1" max="100" placeholder="20">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="input-cigs-pack">Cigarrillos/cajetilla</label>
+          <input class="form-input" type="number" id="input-cigs-pack" min="1" max="50" placeholder="20">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="input-pack-price">Precio por cajetilla</label>
+        <input class="form-input" type="number" id="input-pack-price" min="0" step="0.01" placeholder="0.00">
+        <p class="form-hint">En tu moneda local. Déjalo en 0 si prefieres no calcularlo.</p>
+      </div>
+
+      <div style="height:8px"></div>
+      <button class="btn-primary" id="btn-save-config">Comenzar mi libertad →</button>
+    </div>
+
+  </div>
+
+  <!-- ===== VIEW: DASHBOARD ===== -->
+  <div id="view-dashboard" class="view">
+
+    <div class="dashboard-header">
+      <span class="app-name">LibreHoy</span>
+      <button class="settings-link" id="btn-edit-config" aria-label="Editar configuración">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Future date banner -->
+    <div id="future-banner">
+      <div class="future-title">⏳ Tu fecha aún no ha llegado</div>
+      <div class="future-desc" id="future-date-text"></div>
+    </div>
+
+    <!-- Counter -->
+    <div class="counter-wrapper" id="counter-wrapper">
+      <div class="counter-label">Tiempo libre del tabaco</div>
+      <div id="big-year" class="big-year" style="display:none"></div>
+      <div class="counter-grid">
+        <div class="counter-unit">
+          <div class="counter-number" id="cnt-days">00</div>
+          <div class="counter-unit-label">días</div>
+        </div>
+        <div class="counter-sep">:</div>
+        <div class="counter-unit">
+          <div class="counter-number" id="cnt-hours">00</div>
+          <div class="counter-unit-label">horas</div>
+        </div>
+        <div class="counter-sep">:</div>
+        <div class="counter-unit">
+          <div class="counter-number" id="cnt-mins">00</div>
+          <div class="counter-unit-label">min</div>
+        </div>
+        <div class="counter-sep">:</div>
+        <div class="counter-unit">
+          <div class="counter-number" id="cnt-secs">00</div>
+          <div class="counter-unit-label">seg</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Metrics -->
+    <div class="metrics-grid">
+      <div class="metric-card" id="card-cigs">
+        <div class="metric-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <path d="M18 12H2M22 12h-1M7 8v1M7 15v1M12 8v1M12 15v1"/><rect x="2" y="10" width="16" height="4" rx="2"/>
+          </svg>
+        </div>
+        <div class="metric-value" id="val-cigs">0</div>
+        <div class="metric-name">Cigarrillos evitados</div>
+      </div>
+      <div class="metric-card" id="card-money">
+        <div class="metric-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <div class="metric-value" id="val-money">—</div>
+        <div class="metric-name" id="label-money">Dinero ahorrado</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div class="metric-value" id="val-life">0 min</div>
+        <div class="metric-name">Vida recuperada*</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+        </div>
+        <div class="metric-value" id="val-streak">Día 0</div>
+        <div class="metric-name">Racha activa</div>
+      </div>
+    </div>
+
+    <!-- Health bar -->
+    <div class="health-card">
+      <div class="health-header">
+        <span class="health-title">Recuperación del organismo</span>
+        <span class="health-pct" id="health-pct">0%</span>
+      </div>
+      <div class="health-bar-track">
+        <div class="health-bar-fill" id="health-bar" style="width:0%"></div>
+      </div>
+      <div class="health-desc" id="health-desc">Iniciando el proceso de recuperación…</div>
+    </div>
+
+    <p style="font-size:0.68rem;color:var(--text-muted);padding:10px 20px 0;line-height:1.5;">*Estimado basado en 11 min/cigarrillo (referencia OMS). No constituye consejo médico.</p>
+    <div class="scroll-pad"></div>
+
+  </div>
+
+  <!-- ===== VIEW: ACHIEVEMENTS ===== -->
+  <div id="view-achievements" class="view">
+    <div class="view-header">Tus logros</div>
+    <p class="view-sub">Cada hito es una prueba de tu fortaleza. Los logros desbloqueados brillan con tu color.</p>
+    <div class="achievements-grid" id="achievements-grid"></div>
+    <div class="scroll-pad"></div>
+  </div>
+
+  <!-- ===== VIEW: COMMUNITY ===== -->
+  <div id="view-community" class="view">
+    <div class="community-header">
+      <div class="community-title">Comunidad</div>
+      <div class="community-sub">Historias reales de personas que eligieron ser libres.</div>
+    </div>
+
+    <div class="featured-message" id="featured-msg">
+      <div class="feat-avatar" id="feat-avatar">A</div>
+      <div class="feat-msg" id="feat-text">&nbsp;</div>
+      <div class="feat-author" id="feat-author">&nbsp;</div>
+    </div>
+
+    <div class="community-list" id="community-list"></div>
+    <div class="scroll-pad"></div>
+  </div>
+
+  <!-- ── NAVBAR ── -->
+  <nav id="navbar">
+    <button class="nav-btn active" id="nav-dashboard" data-view="view-dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+      </svg>
+      <span class="nav-label">Inicio</span>
+    </button>
+    <button class="nav-btn" id="nav-achievements" data-view="view-achievements">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
+      </svg>
+      <span class="nav-label">Logros</span>
+    </button>
+    <button class="nav-btn" id="nav-community" data-view="view-community">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      <span class="nav-label">Comunidad</span>
+    </button>
+    <button class="nav-btn" id="nav-settings-link" data-view="view-setup-direct">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      <span class="nav-label">Ajustes</span>
+    </button>
+  </nav>
+
+</div>
+
+<!-- ── RECAI BUTTON ── -->
+<button id="btn-recai" style="display:none">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
+  </svg>
+  <span>Recaí</span>
+</button>
+
+<!-- ── MODAL: RECAÍ ── -->
+<div id="modal-overlay">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-icon">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+        <circle cx="24" cy="24" r="22" fill="rgba(255,179,71,0.1)" stroke="rgba(255,179,71,0.3)" stroke-width="1.5"/>
+        <path d="M24 14v12M24 30v2" stroke="#FFB347" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="modal-title">Un tropiezo no es un fracaso</div>
+    <p class="modal-desc">Cada intento te enseña algo nuevo. ¿Quieres reiniciar tu contador y comenzar de nuevo con más fuerza?</p>
+    <div class="modal-actions">
+      <button class="btn-danger" id="btn-confirm-recai">Sí, reiniciar mi contador</button>
+      <button class="btn-secondary" id="btn-cancel-recai">Cancelar · Sigo en pie</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+  <span id="toast-text">¡Logro desbloqueado!</span>
+</div>
+
+<script>
+// ── STATE & CONSTANTS ──────────────────────────────────────────
+const CACHE_KEY = 'librehoy-data';
+const ACHIEVEMENTS_KEY = 'librehoy-achievements';
+const ACCENT_COLORS = ['#00F5C4','#4FC3F7','#A78BFA','#F48FB1','#FFB347','#69F0AE'];
+const SECOND = 1000;
+const MINUTE = 60 * SECOND;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
+
+const ACHIEVEMENT_DEFS = [
+  { id: 'h1',   label: '1 hora libre',   desc: 'Primera hora sin nicotina',      ms: HOUR,          emoji: '🏅' },
+  { id: 'h12',  label: '12 horas',       desc: 'La nicotina abandona tu sangre', ms: 12 * HOUR,     emoji: '⭐' },
+  { id: 'd1',   label: '1 día completo', desc: 'El riesgo cardíaco ya baja',     ms: DAY,           emoji: '🥉' },
+  { id: 'd3',   label: '3 días',         desc: 'Tu respiración mejora',          ms: 3 * DAY,       emoji: '🥈' },
+  { id: 'w1',   label: '1 semana',       desc: 'Los cilios bronquiales se activan', ms: 7 * DAY,    emoji: '🥇' },
+  { id: 'm1',   label: '1 mes',          desc: 'Circulación notablemente mejor', ms: 30 * DAY,      emoji: '💎' },
+  { id: 'm3',   label: '3 meses',        desc: 'Capacidad pulmonar +30%',        ms: 90 * DAY,      emoji: '👑' },
+  { id: 'y1',   label: '1 año',          desc: 'Riesgo coronario reducido a la mitad', ms: 365 * DAY, emoji: '🌟' },
+];
+
+const COMMUNITY_MSGS = [
+  { name: 'Sofía R.',   text: 'Los primeros 3 días son los más duros. Después tu cuerpo recuerda cómo respirar de verdad.',          days: 47  },
+  { name: 'Carlos M.',  text: 'Cada vez que quería fumar, calculaba cuánto dinero llevaba ahorrado. Funcionó mejor que cualquier parche.', days: 183 },
+  { name: 'Luisa V.',   text: 'Clínicamente, la dependencia física dura solo 72 horas. Lo que queda es hábito, y los hábitos se cambian.', days: 92  },
+  { name: 'Andrés P.',  text: 'Un día desperté y no lo primero en lo que pensé fue en fumar. Ese día cambié todo.',                   days: 312 },
+  { name: 'Marta L.',   text: 'Me compré unas zapatillas con el primer mes ahorrado. Ahora corro 5 km sin ahogarme.',                 days: 211 },
+  { name: 'Roberto K.', text: '¿Saben qué es lo más filosófico de dejar de fumar? Descubres que el "ahora" se estira enormemente.',   days: 730 },
+  { name: 'Elena F.',   text: 'Mi médico me dijo que a las 48h el CO en sangre baja a niveles normales. Eso me motivó más que nada.', days: 58  },
+  { name: 'David Q.',   text: 'Recaí dos veces antes de lograrlo. Cada intento me enseñó algo. No hay fracaso, solo datos.',          days: 145 },
+  { name: 'Isabel G.',  text: 'Lo que más me sorprendió: recuperé el gusto por la comida. Es como estrenar los sentidos.',            days: 67  },
+  { name: 'Miguel O.',  text: 'El peor momento fue el día 4. El mejor, el día 7. Si pasas la primera semana, lo demás fluye.',        days: 403 },
+  { name: 'Patricia N.',text: 'Cada cigarrillo que no enciendes es un acto de amor propio. No lo romantices: simplemente no lo hagas.', days: 29 },
+  { name: 'Fernando S.',text: 'Mi hijo me preguntó por qué huelo diferente. Le dije que finalmente huelo a mí mismo.',                days: 88  },
+];
+
+const HEALTH_STAGES = [
+  { ms: 0,         pct: 5,   desc: 'La decisión está tomada. Tu cuerpo ya comienza a agradecer.' },
+  { ms: HOUR,      pct: 12,  desc: 'La presión arterial y el pulso se normalizan.' },
+  { ms: 8 * HOUR,  pct: 20,  desc: 'El CO en sangre cae. El oxígeno llega mejor a cada célula.' },
+  { ms: DAY,       pct: 30,  desc: 'El riesgo de infarto ya ha comenzado a descender.' },
+  { ms: 3 * DAY,   pct: 42,  desc: 'La nicotina ha desaparecido. Tu olfato y gusto se agudizan.' },
+  { ms: 7 * DAY,   pct: 55,  desc: 'Los cilios bronquiales se reactivan. Respiras mejor.' },
+  { ms: 14 * DAY,  pct: 65,  desc: 'Circulación periférica notablemente mejorada.' },
+  { ms: 30 * DAY,  pct: 75,  desc: 'Un mes completo. Tu función pulmonar mejora semana a semana.' },
+  { ms: 90 * DAY,  pct: 85,  desc: 'Capacidad pulmonar hasta un 30% mayor. Enhorabuena.' },
+  { ms: 365 * DAY, pct: 95,  desc: 'El riesgo de enfermedad coronaria es la mitad que el de un fumador.' },
+  { ms: 5 * 365 * DAY, pct: 100, desc: 'El riesgo de ictus es equivalente al de alguien que nunca fumó.' },
+];
+
+let state = {
+  quitDate: null,
+  dailyCigs: 20,
+  packPrice: 0,
+  cigsPerPack: 20,
+};
+let achievements = {};
+let timerInterval = null;
+let lastSaveTime = 0;
+let currentView = 'view-setup';
+let communityInterval = null;
+let communityIndex = 0;
+let prevSeconds = { days: -1, hours: -1, mins: -1, secs: -1 };
+
+// ── LOCALSTORAGE ──────────────────────────────────────────────
+function loadData() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (raw) state = { ...state, ...JSON.parse(raw) };
+    const rawA = localStorage.getItem(ACHIEVEMENTS_KEY);
+    if (rawA) achievements = JSON.parse(rawA);
+  } catch(_) {}
+}
+
+function saveData() {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(state));
+    localStorage.setItem(ACHIEVEMENTS_KEY, JSON.stringify(achievements));
+  } catch(_) {}
+}
+
+function throttledSave() {
+  const now = Date.now();
+  if (now - lastSaveTime >= 1000) {
+    saveData();
+    lastSaveTime = now;
+  }
+}
+
+// ── TIMER ENGINE ──────────────────────────────────────────────
+function getElapsedMs() {
+  if (!state.quitDate) return 0;
+  return Date.now() - new Date(state.quitDate).getTime();
+}
+
+function msToComponents(ms) {
+  const totalSeconds = Math.floor(ms / 1000);
+  const secs = totalSeconds % 60;
+  const totalMinutes = Math.floor(totalSeconds / 60);
+  const mins = totalMinutes % 60;
+  const totalHours = Math.floor(totalMinutes / 60);
+  const hours = totalHours % 24;
+  const days = Math.floor(totalHours / 24);
+  return { days, hours, mins, secs, totalSeconds, totalMinutes, totalHours };
+}
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function animateDigit(el, val) {
+  const padded = pad(val);
+  if (el.textContent !== padded) {
+    el.textContent = padded;
+    el.classList.remove('flip');
+    void el.offsetWidth;
+    el.classList.add('flip');
+  }
+}
+
+function updateCounter() {
+  const elMs = getElapsedMs();
+
+  if (elMs < 0) {
+    showFutureBanner();
+    return;
+  }
+
+  hideFutureBanner();
+  const { days, hours, mins, secs, totalSeconds } = msToComponents(elMs);
+
+  if (days >= 365) {
+    const years = Math.floor(days / 365);
+    const remDays = days % 365;
+    const bigYear = document.getElementById('big-year');
+    bigYear.textContent = years === 1 ? `${years} año · ${remDays} días` : `${years} años · ${remDays} días`;
+    bigYear.style.display = 'block';
+    document.getElementById('cnt-days').textContent = '00';
+    document.getElementById('cnt-hours').textContent = '00';
+    document.getElementById('cnt-mins').textContent = '00';
+    animateDigit(document.getElementById('cnt-secs'), secs);
+  } else {
+    document.getElementById('big-year').style.display = 'none';
+    animateDigit(document.getElementById('cnt-days'), days);
+    animateDigit(document.getElementById('cnt-hours'), hours);
+    animateDigit(document.getElementById('cnt-mins'), mins);
+    animateDigit(document.getElementById('cnt-secs'), secs);
+  }
+
+  updateMetrics(elMs, totalSeconds, days);
+  updateHealthBar(elMs);
+  updateAchievementsState(elMs);
+
+  throttledSave();
+}
+
+// ── METRICS ──────────────────────────────────────────────────
+function updateMetrics(elMs, totalSeconds, days) {
+  const cigsAvoided = Math.floor((totalSeconds / 86400) * state.dailyCigs);
+  document.getElementById('val-cigs').textContent = cigsAvoided.toLocaleString('es');
+
+  const moneyEl = document.getElementById('val-money');
+  if (!state.packPrice || state.packPrice <= 0) {
+    moneyEl.textContent = '—';
+    moneyEl.closest('.metric-card').setAttribute('data-tooltip', 'Configura tu precio para ver el ahorro');
+  } else {
+    const saved = cigsAvoided * (state.packPrice / state.cigsPerPack);
+    moneyEl.textContent = saved.toFixed(2);
+    moneyEl.closest('.metric-card').removeAttribute('data-tooltip');
+  }
+
+  const lifeMinutes = cigsAvoided * 11;
+  const lifeEl = document.getElementById('val-life');
+  if (lifeMinutes >= 1440) {
+    lifeEl.textContent = (lifeMinutes / 1440).toFixed(1) + ' días';
+  } else if (lifeMinutes >= 60) {
+    lifeEl.textContent = (lifeMinutes / 60).toFixed(1) + ' h';
+  } else {
+    lifeEl.textContent = lifeMinutes + ' min';
+  }
+
+  document.getElementById('val-streak').textContent = `Día ${days}`;
+}
+
+function updateHealthBar(elMs) {
+  let stage = HEALTH_STAGES[0];
+  for (let i = HEALTH_STAGES.length - 1; i >= 0; i--) {
+    if (elMs >= HEALTH_STAGES[i].ms) { stage = HEALTH_STAGES[i]; break; }
+  }
+  const nextIdx = HEALTH_STAGES.indexOf(stage) + 1;
+  let pct = stage.pct;
+  if (nextIdx < HEALTH_STAGES.length) {
+    const progress = (elMs - stage.ms) / (HEALTH_STAGES[nextIdx].ms - stage.ms);
+    pct = stage.pct + (HEALTH_STAGES[nextIdx].pct - stage.pct) * Math.min(progress, 1);
+  }
+  document.getElementById('health-pct').textContent = Math.round(pct) + '%';
+  document.getElementById('health-bar').style.width = pct + '%';
+  document.getElementById('health-desc').textContent = stage.desc;
+}
+
+function showFutureBanner() {
+  const banner = document.getElementById('future-banner');
+  banner.classList.add('visible');
+  const date = new Date(state.quitDate);
+  document.getElementById('future-date-text').textContent =
+    `Te esperamos el ${date.toLocaleDateString('es', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}.`;
+}
+
+function hideFutureBanner() {
+  document.getElementById('future-banner').classList.remove('visible');
+}
+
+function startTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  updateCounter();
+  timerInterval = setInterval(updateCounter, 1000);
+}
+
+// ── ACHIEVEMENTS ENGINE ───────────────────────────────────────
+function renderAchievements() {
+  const grid = document.getElementById('achievements-grid');
+  grid.innerHTML = '';
+  ACHIEVEMENT_DEFS.forEach(def => {
+    const unlocked = !!achievements[def.id];
+    const card = document.createElement('div');
+    card.className = 'achievement-card ' + (unlocked ? 'unlocked' : 'locked');
+    card.id = 'ach-' + def.id;
+    card.innerHTML = `
+      <div class="achievement-unlocked-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <span class="achievement-emoji">${def.emoji}</span>
+      <div class="achievement-title">${def.label}</div>
+      <div class="achievement-desc">${def.desc}</div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function updateAchievementsState(elMs) {
+  ACHIEVEMENT_DEFS.forEach(def => {
+    if (!achievements[def.id] && elMs >= def.ms) {
+      achievements[def.id] = Date.now();
+      saveData();
+      unlockAchievement(def);
+    }
+  });
+}
+
+function unlockAchievement(def) {
+  const card = document.getElementById('ach-' + def.id);
+  if (card) {
+    card.classList.remove('locked');
+    card.classList.add('unlocked', 'just-unlocked');
+    setTimeout(() => card.classList.remove('just-unlocked'), 1000);
+  }
+  showToast(`${def.emoji} ¡Logro desbloqueado! ${def.label}`);
+  vibrate(200);
+}
+
+// ── COMMUNITY ENGINE ──────────────────────────────────────────
+function initCommunity() {
+  const list = document.getElementById('community-list');
+  list.innerHTML = '';
+  COMMUNITY_MSGS.forEach((msg, i) => {
+    const color = ACCENT_COLORS[i % ACCENT_COLORS.length];
+    const item = document.createElement('div');
+    item.className = 'community-item';
+    item.innerHTML = `
+      <div class="c-avatar" style="background:${color}20;color:${color};border:1px solid ${color}40">${msg.name[0]}</div>
+      <div class="c-body">
+        <div class="c-text">"${msg.text}"</div>
+        <div class="c-meta">${msg.name} · ${msg.days} días sin fumar</div>
+      </div>
+    `;
+    list.appendChild(item);
+  });
+  rotateFeatured();
+}
+
+function rotateFeatured() {
+  const el = document.getElementById('featured-msg');
+  const msg = COMMUNITY_MSGS[communityIndex % COMMUNITY_MSGS.length];
+  const color = ACCENT_COLORS[communityIndex % ACCENT_COLORS.length];
+
+  el.classList.add('fading');
+  setTimeout(() => {
+    document.getElementById('feat-avatar').textContent = msg.name[0];
+    document.getElementById('feat-avatar').style.background = color;
+    document.getElementById('feat-text').textContent = `"${msg.text}"`;
+    document.getElementById('feat-author').textContent = `${msg.name} · ${msg.days} días libres`;
+    el.classList.remove('fading');
+    communityIndex++;
+  }, 500);
+
+  if (communityInterval) clearInterval(communityInterval);
+  communityInterval = setInterval(rotateFeatured, 8000);
+}
+
+// ── UI RENDERERS ──────────────────────────────────────────────
+function showView(viewId) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const el = document.getElementById(viewId);
+  if (el) { el.classList.add('active'); el.scrollTop = 0; }
+
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.view === viewId);
+  });
+  currentView = viewId;
+
+  if (viewId === 'view-community' && !communityInterval) initCommunity();
+}
+
+function showSetupFlow(skipOnboarding) {
+  document.getElementById('view-setup').classList.add('active');
+  document.getElementById('navbar').style.display = 'none';
+  document.getElementById('btn-recai').style.display = 'none';
+
+  if (skipOnboarding) {
+    document.getElementById('onboarding-1').classList.add('hidden');
+    document.getElementById('onboarding-2').classList.add('hidden');
+    document.getElementById('config-form').classList.remove('hidden');
+    prefillForm();
+  } else {
+    document.getElementById('onboarding-1').classList.remove('hidden');
+    document.getElementById('onboarding-2').classList.add('hidden');
+    document.getElementById('config-form').classList.add('hidden');
+  }
+}
+
+function showApp() {
+  document.getElementById('navbar').style.display = 'flex';
+  document.getElementById('btn-recai').style.display = 'flex';
+  showView('view-dashboard');
+  renderAchievements();
+  startTimer();
+}
+
+function prefillForm() {
+  const now = new Date();
+  const offset = now.getTimezoneOffset() * 60000;
+  const local = new Date(now - offset).toISOString().slice(0, 16);
+  const qd = document.getElementById('input-quit-date');
+  if (state.quitDate) {
+    qd.value = new Date(new Date(state.quitDate) - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0,16);
+  } else {
+    qd.value = local;
+  }
+  document.getElementById('input-daily-cigs').value = state.dailyCigs || 20;
+  document.getElementById('input-pack-price').value = state.packPrice || '';
+  document.getElementById('input-cigs-pack').value = state.cigsPerPack || 20;
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  document.getElementById('toast-text').textContent = msg;
+  toast.classList.add('visible');
+  setTimeout(() => toast.classList.remove('visible'), 3500);
+}
+
+function vibrate(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
+function showModal() {
+  document.getElementById('modal-overlay').classList.add('visible');
+}
+function hideModal() {
+  document.getElementById('modal-overlay').classList.remove('visible');
+}
+
+// ── EVENT LISTENERS ───────────────────────────────────────────
+document.getElementById('btn-ob1-next').addEventListener('click', () => {
+  document.getElementById('onboarding-1').classList.add('hidden');
+  document.getElementById('onboarding-2').classList.remove('hidden');
+});
+
+document.getElementById('btn-ob2-next').addEventListener('click', () => {
+  document.getElementById('onboarding-2').classList.add('hidden');
+  document.getElementById('config-form').classList.remove('hidden');
+  prefillForm();
+});
+
+document.getElementById('btn-ob2-back').addEventListener('click', () => {
+  document.getElementById('onboarding-2').classList.add('hidden');
+  document.getElementById('onboarding-1').classList.remove('hidden');
+});
+
+document.getElementById('btn-save-config').addEventListener('click', () => {
+  const quitVal = document.getElementById('input-quit-date').value;
+  const errEl = document.getElementById('err-quit-date');
+
+  if (!quitVal) {
+    errEl.classList.add('visible');
+    return;
+  }
+  errEl.classList.remove('visible');
+
+  state.quitDate = new Date(quitVal).toISOString();
+  state.dailyCigs = Math.max(1, parseInt(document.getElementById('input-daily-cigs').value) || 20);
+  state.packPrice = parseFloat(document.getElementById('input-pack-price').value) || 0;
+  state.cigsPerPack = Math.max(1, parseInt(document.getElementById('input-cigs-pack').value) || 20);
+
+  saveData();
+
+  document.getElementById('view-setup').classList.remove('active');
+  showApp();
+});
+
+document.getElementById('btn-edit-config').addEventListener('click', () => {
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = null;
+  showView('view-setup');
+  document.getElementById('navbar').style.display = 'none';
+  document.getElementById('btn-recai').style.display = 'none';
+  document.getElementById('onboarding-1').classList.add('hidden');
+  document.getElementById('onboarding-2').classList.add('hidden');
+  document.getElementById('config-form').classList.remove('hidden');
+  prefillForm();
+});
+
+document.getElementById('nav-settings-link').addEventListener('click', () => {
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = null;
+  document.getElementById('view-setup').classList.add('active');
+  document.querySelectorAll('.view:not(#view-setup)').forEach(v => v.classList.remove('active'));
+  document.getElementById('navbar').style.display = 'none';
+  document.getElementById('btn-recai').style.display = 'none';
+  document.getElementById('onboarding-1').classList.add('hidden');
+  document.getElementById('onboarding-2').classList.add('hidden');
+  document.getElementById('config-form').classList.remove('hidden');
+  prefillForm();
+});
+
+document.querySelectorAll('.nav-btn:not(#nav-settings-link)').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const viewId = btn.dataset.view;
+    if (viewId && viewId !== 'view-setup-direct') showView(viewId);
+  });
+});
+
+document.getElementById('btn-recai').addEventListener('click', () => {
+  vibrate([50]);
+  const btn = document.getElementById('btn-recai');
+  btn.classList.add('btn-recai-shake');
+  setTimeout(() => btn.classList.remove('btn-recai-shake'), 400);
+  showModal();
+});
+
+document.getElementById('btn-confirm-recai').addEventListener('click', () => {
+  vibrate([100, 50, 100]);
+  hideModal();
+
+  const prefs = { dailyCigs: state.dailyCigs, packPrice: state.packPrice, cigsPerPack: state.cigsPerPack };
+  state = { quitDate: null, ...prefs };
+  achievements = {};
+  saveData();
+
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = null;
+  if (communityInterval) clearInterval(communityInterval);
+  communityInterval = null;
+
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('btn-recai').style.display = 'none';
+  document.getElementById('navbar').style.display = 'none';
+  document.getElementById('view-setup').classList.add('active');
+  document.getElementById('onboarding-1').classList.add('hidden');
+  document.getElementById('onboarding-2').classList.add('hidden');
+  document.getElementById('config-form').classList.remove('hidden');
+  prefillForm();
+});
+
+document.getElementById('btn-cancel-recai').addEventListener('click', hideModal);
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) hideModal();
+});
+
+// ── INIT ─────────────────────────────────────────────────────
+function init() {
+  loadData();
+  injectManifest();
+
+  const splash = document.getElementById('splash');
+  const appEl = document.getElementById('app');
+
+  setTimeout(() => {
+    splash.classList.add('hidden');
+    appEl.classList.add('visible');
+
+    if (state.quitDate) {
+      document.getElementById('view-setup').classList.remove('active');
+      showApp();
+    } else {
+      showSetupFlow(false);
+    }
+  }, 1800);
+}
+
+function injectManifest() {
+  const manifest = {
+    name: 'LibreHoy',
+    short_name: 'LibreHoy',
+    description: 'Tu compañero para dejar de fumar',
+    start_url: '.',
+    display: 'standalone',
+    background_color: '#0A0E1A',
+    theme_color: '#00F5C4',
+    orientation: 'portrait',
+    icons: [
+      {
+        src: 'data:image/svg+xml;base64,' + btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" fill="#0A0E1A" rx="40"/><circle cx="96" cy="96" r="60" stroke="#00F5C4" stroke-width="3" fill="none" opacity="0.4"/><path d="M96 46 C96 46 124 62 124 96 C124 130 96 146 96 146 C96 146 68 130 68 96 C68 62 96 46 96 46Z" fill="#00F5C4" opacity="0.12"/><path d="M96 58L96 134M76 74Q96 58 116 74M76 118Q96 134 116 118" stroke="#00F5C4" stroke-width="3.5" stroke-linecap="round"/><circle cx="96" cy="96" r="12" fill="#00F5C4"/><circle cx="96" cy="96" r="6" fill="#0A0E1A"/></svg>`),
+        sizes: '192x192',
+        type: 'image/svg+xml',
+        purpose: 'any maskable'
+      },
+      {
+        src: 'data:image/svg+xml;base64,' + btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#0A0E1A" rx="100"/><circle cx="256" cy="256" r="160" stroke="#00F5C4" stroke-width="6" fill="none" opacity="0.4"/><path d="M256 116 C256 116 320 154 320 256 C320 358 256 396 256 396 C256 396 192 358 192 256 C192 154 256 116 256 116Z" fill="#00F5C4" opacity="0.12"/><path d="M256 148L256 364M206 194Q256 148 306 194M206 318Q256 364 306 318" stroke="#00F5C4" stroke-width="8" stroke-linecap="round"/><circle cx="256" cy="256" r="32" fill="#00F5C4"/><circle cx="256" cy="256" r="16" fill="#0A0E1A"/></svg>`),
+        sizes: '512x512',
+        type: 'image/svg+xml',
+        purpose: 'any maskable'
+      }
+    ]
+  };
+  const b64 = btoa(JSON.stringify(manifest));
+  document.getElementById('manifest-link').href = 'data:application/manifest+json;base64,' + b64;
+}
+
+// ── SERVICE WORKER ────────────────────────────────────────────
+const SW_CODE = `
+const CACHE = 'librehoy-v1';
+const ASSETS = [self.location.href];
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())
+  );
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
+});
+self.addEventListener('fetch', e => {
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(response => {
+        if (response && response.status === 200 && response.type !== 'opaque') {
+          const clone = response.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return response;
+      }).catch(() => caches.match('/'));
+    })
+  );
+});
+`;
+
+if ('serviceWorker' in navigator) {
+  const blob = new Blob([SW_CODE], { type: 'text/javascript' });
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl).catch(() => {});
+}
+
+init();
+</script>
+</body>
+</html>
